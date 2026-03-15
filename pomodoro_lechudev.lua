@@ -39,6 +39,15 @@ enable_minute = true
 enable_tick = true
 
 --------------------------------------------------
+-- HOTKEYS
+--------------------------------------------------
+
+hotkey_start = obs.OBS_INVALID_HOTKEY_ID
+hotkey_pause = obs.OBS_INVALID_HOTKEY_ID
+hotkey_reset = obs.OBS_INVALID_HOTKEY_ID
+hotkey_skip  = obs.OBS_INVALID_HOTKEY_ID
+
+--------------------------------------------------
 -- REPRODUCIR SONIDO
 --------------------------------------------------
 
@@ -73,8 +82,8 @@ function update_timer_text()
         mode,
         minutes,
         seconds,
-        session_current
-        ,sessions_total
+        session_current,
+        sessions_total
         )
 
         local settings = obs.obs_data_create()
@@ -91,7 +100,7 @@ function update_timer_text()
 end
 
 --------------------------------------------------
--- CAMBIAR FASE
+-- CAMBIO DE FASE
 --------------------------------------------------
 
 function next_phase()
@@ -121,11 +130,12 @@ function next_phase()
     else
 
         session_current = session_current + 1
+
         if session_current > sessions_total then
             session_current = 1
         end
 
-       mode = "FOCUS"
+        mode = "FOCUS"
         time_left = focus_min * 60
 
         if enable_focus then
@@ -186,26 +196,37 @@ end
 -- CONTROLES
 --------------------------------------------------
 
-function start_timer()
+function start_timer(pressed)
+
+    if pressed ~= nil then
+        if not pressed then return end
+    end
 
     if not running then
         running = true
 
-        -- reproducir sonido al iniciar la primera sesión
-        if mode == "FOCUS" and session_current == 1 then
-            if enable_focus then
-                play_sound(snd_focus)
-            end
+        if mode == "FOCUS" and enable_focus then
+            play_sound(snd_focus)
         end
     end
 
 end
 
-function pause_timer()
+function pause_timer(pressed)
+
+    if pressed ~= nil then
+        if not pressed then return end
+    end
+
     running = false
+
 end
 
-function reset_timer()
+function reset_timer(pressed)
+
+    if pressed ~= nil then
+        if not pressed then return end
+    end
 
     running = false
 
@@ -218,49 +239,15 @@ function reset_timer()
 
 end
 
-function skip_phase()
+function skip_phase(pressed)
+
+    if pressed ~= nil then
+        if not pressed then return end
+    end
 
     next_phase()
 
     update_timer_text()
-
-end
-
---------------------------------------------------
--- DESCRIPCIÓN DEL SCRIPT
---------------------------------------------------
-
-function script_description()
-
-return [[
-Pomodoro Timer para OBS
-
-INSTRUCCIONES:
-
-1. Crea una fuente de texto en tu escena.
-2. Selecciónala en este script.
-3. El script actualizará automáticamente el texto.
-
-CONFIGURACIÓN:
-
-Focus → tiempo de trabajo
-Short Break → descanso corto
-Long Break → descanso largo
-
-Puedes definir:
-
-• duración de sesiones
-• duración de descansos
-• cada cuántas sesiones ocurre descanso largo
-• sonidos opcionales
-
-CONTROLES:
-
-Start → inicia el temporizador
-Pause → pausa
-Reset → reinicia desde sesión 1
-Skip → salta al siguiente periodo
-]]
 
 end
 
@@ -287,7 +274,12 @@ function script_properties()
     "long_after",
     "Cada cuántas sesiones hay descanso largo",
     2,10,1)
-    obs.obs_properties_add_int(p,"sessions_total","Total de sesiones del ciclo",1,50,1)
+
+    obs.obs_properties_add_int(
+    p,
+    "sessions_total",
+    "Total de sesiones",
+    1,50,1)
 
     ------------------------------------------------
     -- SONIDOS
@@ -329,32 +321,56 @@ function script_update(settings)
 
     timer_source_name =
     obs.obs_data_get_string(settings,"timer_source")
-    sessions_total =
-    obs.obs_data_get_int(settings,"sessions_total")
 
-    focus_min = obs.obs_data_get_int(settings,"focus")
-    short_min = obs.obs_data_get_int(settings,"short")
-    long_min = obs.obs_data_get_int(settings,"long")
+    focus_min =
+    obs.obs_data_get_int(settings,"focus")
+
+    short_min =
+    obs.obs_data_get_int(settings,"short")
+
+    long_min =
+    obs.obs_data_get_int(settings,"long")
 
     sessions_before_long =
     obs.obs_data_get_int(settings,"long_after")
 
-    snd_focus = obs.obs_data_get_string(settings,"snd_focus")
-    snd_short = obs.obs_data_get_string(settings,"snd_short")
-    snd_long = obs.obs_data_get_string(settings,"snd_long")
-    snd_minute = obs.obs_data_get_string(settings,"snd_minute")
-    snd_tick = obs.obs_data_get_string(settings,"snd_tick")
+    sessions_total =
+    obs.obs_data_get_int(settings,"sessions_total")
 
-    enable_focus = obs.obs_data_get_bool(settings,"enable_focus")
-    enable_short = obs.obs_data_get_bool(settings,"enable_short")
-    enable_long = obs.obs_data_get_bool(settings,"enable_long")
-    enable_minute = obs.obs_data_get_bool(settings,"enable_minute")
-    enable_tick = obs.obs_data_get_bool(settings,"enable_tick")
+    snd_focus =
+    obs.obs_data_get_string(settings,"snd_focus")
+
+    snd_short =
+    obs.obs_data_get_string(settings,"snd_short")
+
+    snd_long =
+    obs.obs_data_get_string(settings,"snd_long")
+
+    snd_minute =
+    obs.obs_data_get_string(settings,"snd_minute")
+
+    snd_tick =
+    obs.obs_data_get_string(settings,"snd_tick")
+
+    enable_focus =
+    obs.obs_data_get_bool(settings,"enable_focus")
+
+    enable_short =
+    obs.obs_data_get_bool(settings,"enable_short")
+
+    enable_long =
+    obs.obs_data_get_bool(settings,"enable_long")
+
+    enable_minute =
+    obs.obs_data_get_bool(settings,"enable_minute")
+
+    enable_tick =
+    obs.obs_data_get_bool(settings,"enable_tick")
 
 end
 
 --------------------------------------------------
--- INICIO
+-- CARGA DEL SCRIPT
 --------------------------------------------------
 
 function script_load(settings)
@@ -362,5 +378,29 @@ function script_load(settings)
     time_left = focus_min * 60
 
     obs.timer_add(timer_callback,1000)
+
+    hotkey_start =
+    obs.obs_hotkey_register_frontend(
+    "pomodoro.start",
+    "Pomodoro Start",
+    start_timer)
+
+    hotkey_pause =
+    obs.obs_hotkey_register_frontend(
+    "pomodoro.pause",
+    "Pomodoro Pause",
+    pause_timer)
+
+    hotkey_reset =
+    obs.obs_hotkey_register_frontend(
+    "pomodoro.reset",
+    "Pomodoro Reset",
+    reset_timer)
+
+    hotkey_skip =
+    obs.obs_hotkey_register_frontend(
+    "pomodoro.skip",
+    "Pomodoro Skip",
+    skip_phase)
 
 end
