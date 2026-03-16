@@ -31,12 +31,14 @@ snd_short = ""
 snd_long = ""
 snd_minute = ""
 snd_tick = ""
+snd_session_end = ""
 
 enable_focus = true
 enable_short = true
 enable_long = true
 enable_minute = true
 enable_tick = true
+enable_session_end = true
 
 --------------------------------------------------
 -- HOTKEYS
@@ -107,6 +109,13 @@ function next_phase()
 
     if mode == "FOCUS" then
 
+        -- completar sesión
+        session_current = session_current + 1
+
+        if session_current > sessions_total then
+            session_current = 1
+        end
+
         if session_current % sessions_before_long == 0 then
 
             mode = "LONG BREAK"
@@ -129,12 +138,6 @@ function next_phase()
 
     else
 
-        session_current = session_current + 1
-
-        if session_current > sessions_total then
-            session_current = 1
-        end
-
         mode = "FOCUS"
         time_left = focus_min * 60
 
@@ -145,7 +148,6 @@ function next_phase()
     end
 
 end
-
 --------------------------------------------------
 -- TIMER
 --------------------------------------------------
@@ -184,9 +186,11 @@ function timer_callback()
 
     ---------------------------------
 
-    if time_left <= 0 then
-        next_phase()
+     if enable_session_end then
+        play_sound(snd_session_end)
     end
+
+    next_phase()
 
     update_timer_text()
 
@@ -278,7 +282,7 @@ function script_properties()
     obs.obs_properties_add_int(
     p,
     "sessions_total",
-    "Total de sesiones",
+    "Total de sesiones (incluye descansos)",
     1,50,1)
 
     ------------------------------------------------
@@ -299,6 +303,9 @@ function script_properties()
 
     obs.obs_properties_add_bool(p,"enable_tick","Aviso últimos 10 segundos")
     obs.obs_properties_add_text(p,"snd_tick","Fuente sonido tick",obs.OBS_TEXT_DEFAULT)
+
+    obs.obs_properties_add_bool(p,"enable_session_end","Sonido fin de sesión")
+    obs.obs_properties_add_text(p,"snd_session_end","Fuente sonido fin de sesión",obs.OBS_TEXT_DEFAULT)
 
     ------------------------------------------------
     -- BOTONES
@@ -348,9 +355,12 @@ function script_update(settings)
 
     snd_minute =
     obs.obs_data_get_string(settings,"snd_minute")
-
+    
     snd_tick =
     obs.obs_data_get_string(settings,"snd_tick")
+    
+    snd_session_end =
+obs.obs_data_get_string(settings,"snd_session_end")
 
     enable_focus =
     obs.obs_data_get_bool(settings,"enable_focus")
@@ -366,6 +376,10 @@ function script_update(settings)
 
     enable_tick =
     obs.obs_data_get_bool(settings,"enable_tick")
+
+
+enable_session_end =
+obs.obs_data_get_bool(settings,"enable_session_end")
 
 end
 
